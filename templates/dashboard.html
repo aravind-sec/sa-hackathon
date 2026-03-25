@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="refresh" content="2">
+    <title>API Shield</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: monospace; background: #f5f5f5; padding: 20px; }
+        
+        .container { max-width: 1200px; margin: 0 auto; }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        h1 { color: #333; }
+        
+        .btn-refresh {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        
+        .btn-refresh:hover { background: #0056b3; }
+        
+        h2 { font-size: 16px; margin: 15px 0 10px; color: #555; font-weight: bold; }
+        
+        .box { background: white; border-left: 4px solid #ddd; padding: 15px; margin-bottom: 15px; }
+        .box.high { border-left-color: red; background: #fff5f5; }
+        .box.medium { border-left-color: orange; background: #fffaf5; }
+        .box.low { border-left-color: green; background: #f5fff5; }
+        
+        .score { font-size: 32px; font-weight: bold; margin: 10px 0; }
+        .score.high { color: red; }
+        .score.medium { color: orange; }
+        .score.low { color: green; }
+        
+        /* Scrollable tables */
+        .scroll-container {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th { background: #f0f0f0; padding: 8px; text-align: left; font-weight: bold; position: sticky; top: 0; }
+        td { padding: 8px; border-bottom: 1px solid #eee; }
+        tr:hover { background: #f9f9f9; }
+        
+        .ip-high { color: red; font-weight: bold; }
+        .ip-medium { color: orange; }
+        .ip-alerted { background: #ffcccc !important; font-weight: bold; color: red; }
+        
+        .empty { color: #999; font-size: 13px; }
+        
+        /* Blacklist styles */
+        .ip-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            margin: 5px 0;
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+        
+        .ip-text { font-weight: bold; color: red; }
+        
+        .btn-remove {
+            background: #ff4444;
+            color: white;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .btn-remove:hover { background: #cc0000; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>🛡️ API Shield</h1>
+        <button class="btn-refresh" onclick="location.reload()">🔄 Refresh</button>
+    </div>
+    
+    <!-- Risk Score -->
+    <div class="box {{ level|lower }}">
+        <h2>Overall Risk</h2>
+        <div class="score {{ level|lower }}">{{ score }}</div>
+        <p>{{ level }}</p>
+    </div>
+    
+    <!-- Blacklisted IPs -->
+    <div class="box">
+        <h2>Blacklisted IPs ({{ blacklisted_ips|length }})</h2>
+        {% if blacklisted_ips %}
+            {% for ip in blacklisted_ips %}
+            <div class="ip-item">
+                <span class="ip-text">{{ ip }}</span>
+                <form method="POST" action="/remove-blacklist" style="display:inline;">
+                    <input type="hidden" name="ip" value="{{ ip }}">
+                    <button type="submit" class="btn-remove">Remove</button>
+                </form>
+            </div>
+            {% endfor %}
+        {% else %}
+            <p class="empty">No blacklisted IPs</p>
+        {% endif %}
+    </div>
+    
+    <!-- Active Alerts -->
+    <div class="box">
+        <h2>Active Alerts ({{ alerts|length }})</h2>
+        {% if alerts %}
+            <div class="scroll-container">
+                <table>
+                    <tr>
+                        <th>IP</th>
+                        <th>Attack Type</th>
+                        <th>Risk Score</th>
+                    </tr>
+                    {% for alert in alerts %}
+                    <tr>
+                        <td class="ip-{{ alert.risk_score|int|default('low') }}">{{ alert.ip_address }}</td>
+                        <td>{{ alert.attack_type }}</td>
+                        <td>{{ alert.risk_score|round(1) }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        {% else %}
+            <p class="empty">No alerts</p>
+        {% endif %}
+    </div>
+    
+    <!-- Live Logs -->
+    <div class="box">
+        <h2>Live Logs (Last 10)</h2>
+        {% if logs %}
+            <div class="scroll-container">
+                <table>
+                    <tr>
+                        <th>Time</th>
+                        <th>IP</th>
+                        <th>Endpoint</th>
+                        <th>Method</th>
+                        <th>Status</th>
+                    </tr>
+                    {% for log in logs %}
+                    <tr {% if log.is_alerted %}style="background: #ffcccc;"{% endif %}>
+                        <td {% if log.is_alerted %}class="ip-alerted"{% endif %}>{{ log.timestamp[-8:] }}</td>
+                        <td {% if log.is_alerted %}class="ip-alerted"{% endif %}>{{ log.ip }}</td>
+                        <td>{{ log.endpoint }}</td>
+                        <td>{{ log.method }}</td>
+                        <td>{{ log.status_code }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        {% else %}
+            <p class="empty">No logs yet</p>
+        {% endif %}
+    </div>
+</div>
+
+</body>
+</html>
