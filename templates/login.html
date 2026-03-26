@@ -1,17 +1,111 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Login</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Test - Login</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0a0e27;
+            color: #e4e9f7;
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background: #141829;
+            border: 1px solid #252d48;
+            border-radius: 4px;
+            padding: 30px;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        h2 {
+            font-size: 18px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 14px;
+        }
+
+        label {
+            display: block;
+            font-size: 12px;
+            margin-bottom: 4px;
+            color: #8a92b5;
+            text-transform: uppercase;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            background: #1a1f3a;
+            border: 1px solid #252d48;
+            border-radius: 3px;
+            color: #e4e9f7;
+            font-size: 13px;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #4f94ff;
+            box-shadow: 0 0 6px rgba(79, 148, 255, 0.2);
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background: #4f94ff;
+            border: none;
+            border-radius: 3px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background: #3d7ce8;
+        }
+
+        .info {
+            font-size: 11px;
+            color: #8a92b5;
+            margin-top: 14px;
+            text-align: center;
+        }
+    </style>
 </head>
 <body>
 
-<h2>Login Page</h2>
-
-<form method="POST" action="/login">
-    <input type="text" name="username" placeholder="Username" required><br><br>
-    <input type="password" name="password" placeholder="Password" required><br><br>
-    <button type="submit">Login</button>
-</form>
+<div class="container">
+    <h2>🛡️ Test Login</h2>
+    <form method="POST" action="/login">
+        <div class="form-group">
+            <label>Username</label>
+            <input type="text" name="username" placeholder="admin" required>
+        </div>
+        <div class="form-group">
+            <label>Password</label>
+            <input type="password" name="password" placeholder="1234" required>
+        </div>
+        <button type="submit">Login</button>
+    </form>
+    <div class="info">Demo: admin / 1234</div>
+</div>
 
 </body>
 </html>

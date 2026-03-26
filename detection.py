@@ -1,22 +1,11 @@
 import json
 from collections import defaultdict
 from datetime import datetime, timedelta
-from blacklist import add_to_blacklist, load_blacklist
+from blacklist import add_to_blacklist
 from whitelist import load_whitelist
+from db import get_logs   # ✅ DB instead of file
 
-LOG_FILE = "logs/requests.log"
 ALERTS_FILE = "logs/alerts.json"
-
-
-def load_logs():
-    logs = []
-    try:
-        with open(LOG_FILE, "r") as f:
-            for line in f:
-                logs.append(json.loads(line))
-    except FileNotFoundError:
-        return []
-    return logs
 
 
 def load_alerts():
@@ -35,11 +24,12 @@ def save_alerts(alerts):
 
 
 def parse_time(ts):
-    return datetime.strptime(ts, "%Y-%m-%d %H:%M:%S")
+    # ✅ Handles ISO timestamp
+    return datetime.fromisoformat(ts)
 
 
 def detect_attacks():
-    logs = load_logs()
+    logs = get_logs(500)   # ✅ fetch from DB
     stored_alerts = load_alerts()
     whitelist = load_whitelist()
 
@@ -54,7 +44,7 @@ def detect_attacks():
 
     for ip, entries in ip_requests.items():
 
-        # 🚀 SKIP WHITELISTED IPS
+        # 🚀 Skip whitelist
         if ip in whitelist:
             continue
 
@@ -62,6 +52,7 @@ def detect_attacks():
         if ip in alerted_ips:
             continue
 
+        # Sort logs by time
         entries.sort(key=lambda x: x["timestamp"])
 
         # ========== CREDENTIAL STUFFING ==========
@@ -77,7 +68,6 @@ def detect_attacks():
                 "risk_score": 9.0,
                 "timestamp": datetime.utcnow().isoformat()
             })
-            alerted_ips.add(ip)
             add_to_blacklist(ip)
             continue
 
@@ -103,9 +93,22 @@ def detect_attacks():
                     "risk_score": 8.5,
                     "timestamp": datetime.utcnow().isoformat()
                 })
-                alerted_ips.add(ip)
                 add_to_blacklist(ip)
                 break
+
+        # ========== BOT ACTIVITY (NEW 🔥) ==========
+        if len(entries) > 20:
+            time_diff = parse_time(entries[-1]["timestamp"]) - parse_time(entries[0]["timestamp"])
+
+            if time_diff.total_seconds() < 5:
+                new_alerts.append({
+                    "ip_address": ip,
+                    "attack_type": "Bot Activity",
+                    "risk_score": 9.5,
+                    "timestamp": datetime.utcnow().isoformat()
+                })
+                add_to_blacklist(ip)
+                continue
 
         # ========== SUSPICIOUS ENDPOINT ==========
         admin_hits = [
@@ -120,9 +123,9 @@ def detect_attacks():
                 "risk_score": 7.0,
                 "timestamp": datetime.utcnow().isoformat()
             })
-            alerted_ips.add(ip)
             add_to_blacklist(ip)
 
+    # Merge alerts
     all_alerts = stored_alerts + new_alerts
     save_alerts(all_alerts)
 
